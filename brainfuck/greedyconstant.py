@@ -67,6 +67,8 @@ def output(s, mem=[0,0], p=0):
         p = best_i
         mem[i] = c
 
+    code.append('<' * p)
+
     return ''.join(code)
 
 
@@ -85,7 +87,7 @@ def constant(s, n=5, verbose=0):
             best_len = len(best)
 
     pre = '% *0' + ' 0' * (n-1)
-    post = '% ' + ' '.join('%s%d' % ('*' if i == p else '', mem[i]) for i in range(len(mem)))
+    post = '% *' + ' '.join('%d' % mem[i] for i in range(len(mem)))
     return pre + '\n' + ''.join(best) + '\n' + post
 
 def main():
