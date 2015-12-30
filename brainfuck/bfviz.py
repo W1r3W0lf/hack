@@ -71,23 +71,6 @@ def record_execute(code):
 
     return states
 
-def render(code, states):
-    mem_len = max(len(mem) for _, mem, __, ___ in states)
-    code_len = sum(len(c) for c in code)
-    out_len = max(len(out) for _, __, ___, out in states)
-
-    code_off = [0]
-    for c in code:
-        code_off.append(code_off[-1] + len(c))
-
-    for p, mem, ip, out in states:
-        print (''.join(code) + " " +
-               ' '.join("%2x" % x for x in mem) + "  0" * (mem_len - len(mem)))
-        print (" " * ip + ("^" if p >= 0 else "") + " " * (code_len - ip - 1) +
-               " " + "   " * p + " ^")
-
-    print mem_len, code_len
-
 def render_state(code, state, mem_len, out_len, font, csize, size):
 
     im = Image.new('RGBA', size, (255, 255, 255, 255))
