@@ -35,7 +35,20 @@ def scan(code, i, direction):
             depth -= direction
     return i
 
-def record_execute(code):
+def record_execute(code, split_mem_change=False, split_output=False):
+    """Executes brainfuck code and records states.
+
+    State is encoded as a 4 tuple of pointer, memory area, instruction
+    pointer and output so far produced. One such tuple is added to the
+    return value for each instruction executed.
+
+    If split_mem_change is set, an additional state frame is added
+    after instruction pointer is moved but before memory or pointer is
+    updated for instructions that modify pointer or memory.
+
+    If split_output is set, same thing but when output's written.
+    """
+
     p, mem, ip, out = 0, [0], -1, []
 
     states = []
@@ -45,6 +58,11 @@ def record_execute(code):
         ip += 1
         if ip >= len(code):
             break
+
+        if split_mem_change and code[ip] in ('<', '>', ',', '+', '-'):
+            states.append((p, mem[:], ip, out[:]))
+        if split_output and code[ip] == '.':
+            states.append((p, mem[:], ip, out[:]))
 
         if code[ip] == '>':
             p += 1
@@ -71,26 +89,58 @@ def record_execute(code):
 
     return states
 
-def render_state(code, state, mem_len, out_len, font, csize, size):
-
-    im = Image.new('RGBA', size, (255, 255, 255, 255))
+def render_code(code, ip, font, csize):
+    im = Image.new('RGBA', (len(code) * csize[0], int(csize[1] * 1.5)),
+                   (255, 255, 255, 255))
     draw = ImageDraw.Draw(im)
+    for i, c in enumerate(code):
+        draw.text((csize[0] * i, 0), c, font=font,
+                  fill=(0 if i != ip else 255, 0, 0, 255))
+    del draw
+    return im
+
+def render_mem(mem, p, mem_len, font, csize):
+    mem = mem + [0] * (mem_len - len(mem))
+    width = font.getsize("mem: " + " ".join("%d" % x for x in mem))[0]
+    im = Image.new('RGBA', (width, int(csize[1] * 1.5)),
+                   (255, 255, 255, 255))
+    draw = ImageDraw.Draw(im)
+
+    draw.text((0, 0), "mem:", font=font, fill=(0, 0, 0, 255))
+    xoff = font.getsize("mem: ")[0]
+    for i, x in enumerate(mem + [0] * (mem_len - len(mem))):
+        fill = 0 if i != p else 255, 0, 0, 255
+        text = "%d " % x
+        draw.text((xoff, 0), text, font=font, fill=fill)
+        xoff += font.getsize(text)[0]
+    del draw
+    return im
+
+def render_out(out, font, csize):
+    text = "out: " + " ".join("%d" % x for x in out)
+    im = Image.new('RGBA', (font.getsize(text)[0], int(csize[1] * 1.5)),
+                   (255, 255, 255, 255))
+    draw = ImageDraw.Draw(im)
+    draw.text((0, 0), text, font=font, fill=(0, 0, 0, 255))
+    del draw
+    return im
+
+def render_state(code, state, mem_len, out_len, font, csize):
 
     sp, smem, sip, sout = state
 
-    for i, c in enumerate(code):
-        xy = (i * csize[0], 0)
-        fill = 0 if i != sip else 255, 0, 0, 255
+    im_code = render_code(code, sip, font, csize)
+    im_mem = render_mem(smem, sp, mem_len, font, csize)
+    im_out = render_out(sout, font, csize)
 
-        draw.text(xy, c, font=font, fill=fill)
+    size = (max(im_code.size[0], im_mem.size[0]),
+            im_code.size[1] + im_mem.size[1] + im_out.size[1])
 
-    for i, x in enumerate(smem + [0] * (mem_len - len(smem))):
-        xy = (i * csize[0] * 4, csize[1])
-        fill = 0 if i != sp else 255, 0, 0, 255
+    im = Image.new('RGBA', size, (255, 255, 255, 255))
+    im.paste(im_code, (0, 0))
+    im.paste(im_mem, (0, im_code.size[1]))
+    im.paste(im_out, (0, im_code.size[1] + im_mem.size[1]))
 
-        draw.text(xy, "%3d" % x, font=font, fill=fill)
-
-    del draw
     return im
 
 def render(code, states, max_width=640):
@@ -98,7 +148,7 @@ def render(code, states, max_width=640):
     code_len = sum(len(c) for c in code)
     out_len = max(len(out) for _, __, ___, out in states)
 
-    font = ImageFont.truetype(FONT_PATH, 20)
+    font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
 
     char_sizes = map(font.getsize,
                      [',', '.', '[', ']', '<', '>', '+', '-'] +
@@ -107,7 +157,7 @@ def render(code, states, max_width=640):
              max(cs[1] for cs in char_sizes))
 
     for i, s in enumerate(states):
-        frame = render_state(code, s, mem_len, out_len, font, csize, (640, 480))
+        frame = render_state(code, s, mem_len, out_len, font, csize)
         frame.save(open("viz_%04d.png" % i, "w"), "PNG")
 
 
@@ -118,7 +168,7 @@ def main():
 
     code = tokenize(open(sys.argv[1]).read().strip())
 
-    render(code, record_execute(code))
+    render(code, record_execute(code, True, True))
 
     return 0
 
