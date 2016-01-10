@@ -21,9 +21,11 @@ from PIL import ImageSequence
 FONT_PATH = "/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf"
 FONT_SIZE = 20
 
+
 def tokenize(code):
     return [t for t in re.compile(r'([,.[\]+-<>])').split(code)
             if len(t) > 0]
+
 
 def scan(code, i, direction):
     depth = 1
@@ -35,7 +37,10 @@ def scan(code, i, direction):
             depth -= direction
     return i
 
-def record_execute(code, split_mem_change=False, split_output=False):
+
+def record_execute(code,
+                   split_mem_change=False,
+                   split_output=False):
     """Executes brainfuck code and records states.
 
     State is encoded as a 4 tuple of pointer, memory area, instruction
@@ -86,8 +91,10 @@ def record_execute(code, split_mem_change=False, split_output=False):
             if mem[p] != 0:
                 states.append((p, mem[:], ip, out[:]))
                 ip = scan(code, ip, -1)
+    states.append((p, mem[:], -1, out[:]))
 
     return states
+
 
 def render_code(code, ip, font, csize):
     im = Image.new('RGBA', (len(code) * csize[0], int(csize[1] * 1.5)),
@@ -98,6 +105,7 @@ def render_code(code, ip, font, csize):
                   fill=(0 if i != ip else 255, 0, 0, 255))
     del draw
     return im
+
 
 def render_mem(mem, p, mem_len, font, csize):
     mem = mem + [0] * (mem_len - len(mem))
@@ -116,6 +124,7 @@ def render_mem(mem, p, mem_len, font, csize):
     del draw
     return im
 
+
 def render_out(out, font, csize):
     text = "out: " + " ".join("%d" % x for x in out)
     im = Image.new('RGBA', (font.getsize(text)[0], int(csize[1] * 1.5)),
@@ -125,8 +134,8 @@ def render_out(out, font, csize):
     del draw
     return im
 
-def render_state(code, state, mem_len, out_len, font, csize):
 
+def render_state(code, state, mem_len, out_len, font, csize):
     sp, smem, sip, sout = state
 
     im_code = render_code(code, sip, font, csize)
@@ -142,6 +151,7 @@ def render_state(code, state, mem_len, out_len, font, csize):
     im.paste(im_out, (0, im_code.size[1] + im_mem.size[1]))
 
     return im
+
 
 def render(code, states, max_width=640):
     mem_len = max(len(mem) for _, mem, __, ___ in states)
