@@ -24,7 +24,7 @@ def setup_random(s, n):
 
     code = []
 
-    order = range(1, n)
+    order = [random.randrange(1,n) for _ in range(1, n)]
     random.shuffle(order)
 
     x = max(s) / (n - 1)
@@ -65,7 +65,7 @@ def output(s, mem=[0,0], p=0):
         code.append(best)
         code.append('.')
         p = best_i
-        mem[i] = c
+        mem[p] = c
 
     code.append('<' * p)
 
@@ -77,7 +77,7 @@ def constant(s, n=5, verbose=0):
     best = None
     best_len = float('inf')
 
-    for _ in xrange(10000):
+    for _ in xrange(100000):
         code, mem, p = setup_random(s, n)
         code += output(s, mem, p)
         if len(code) < best_len:

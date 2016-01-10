@@ -90,7 +90,12 @@ def constant(s):
         curr = goal
         code.append('.')
 
-    return ''.join(code)
+    code.append('[-]')
+    if dir == '<':
+        code.append('<')
+
+    return '% *0 0\n' + ''.join(code) + '\n% *0 0'
+
 
 if __name__ == "__main__":
     import sys
