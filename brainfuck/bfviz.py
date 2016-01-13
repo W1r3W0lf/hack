@@ -117,7 +117,9 @@ def render_mem(mem, p, mem_len, font, csize):
     draw.text((0, 0), "mem:", font=font, fill=(0, 0, 0, 255))
     xoff = font.getsize("mem: ")[0]
     for i, x in enumerate(mem + [0] * (mem_len - len(mem))):
-        fill = 0 if i != p else 255, 0, 0, 255
+        fill = 0, 0, 0, 255
+        if i == p and mem_len > 1:
+            fill = 255, 0, 0, 255
         text = "%d " % x
         draw.text((xoff, 0), text, font=font, fill=fill)
         xoff += font.getsize(text)[0]
